@@ -1,17 +1,14 @@
 package jhorlamide;
 
-import io.github.cdimascio.dotenv.Dotenv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import javax.security.auth.login.LoginException;
 
 public class Main {
    private static final Logger logger = LoggerFactory.getLogger(MessageReceiveListener.class);
 
    public static void main(String[] args) {
-      var dotenv = Dotenv.load();
-      var token = dotenv.get("DISCORD_BOT_TOKEN");
+      var token = System.getenv("DISCORD_BOT_TOKEN");
 
       if (token == null) {
          System.err.println("Error: DISCORD_BOT_TOKEN is not set in .env file.");

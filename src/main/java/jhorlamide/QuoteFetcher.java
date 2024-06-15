@@ -1,6 +1,5 @@
 package jhorlamide;
 
-import io.github.cdimascio.dotenv.Dotenv;
 import org.json.JSONObject;
 
 import java.net.URI;
@@ -10,8 +9,7 @@ import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
 
 public class QuoteFetcher {
-   private static final Dotenv dotenv = Dotenv.load();
-   private static final String API_URL = dotenv.get("DUMMY_QUOTE_API");
+   private static final String API_URL = System.getenv("DUMMY_QUOTE_API");
 
    public static CompletableFuture<String> getRandomQuote() {
       HttpClient client = HttpClient.newHttpClient();

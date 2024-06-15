@@ -19,7 +19,6 @@ application {
 
 dependencies {
     implementation "net.dv8tion:JDA:5.0.0-beta.24"
-    implementation "io.github.cdimascio:dotenv-java:2.2.3"
     implementation 'org.json:json:20231013'
     implementation "org.jsoup:jsoup:1.15.3"
     implementation "org.slf4j:slf4j-api:2.1.0-alpha1"
