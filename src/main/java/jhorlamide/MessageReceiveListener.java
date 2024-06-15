@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -18,9 +19,13 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Random;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MessageReceiveListener extends ListenerAdapter {
    private final String CHALLENGE_FILE_PATH = "./challenges.json";
+   private static final Logger logger = LoggerFactory.getLogger(MessageReceiveListener.class);
+
 
    @Override
    public void onMessageReceived(@NotNull MessageReceivedEvent event) {
@@ -65,8 +70,7 @@ public class MessageReceiveListener extends ListenerAdapter {
          String messageResponse = getRandomChallenge();
          message.getChannel().sendMessage(messageResponse).queue();
       } catch (IOException e) {
-         responseWithError(message, "❌ Error reading challenges ❌. Please again later");
-         e.printStackTrace();
+         responseWithError(message, e,"❌ Error reading challenges ❌. Please again later");
       }
    }
 
@@ -85,8 +89,7 @@ public class MessageReceiveListener extends ListenerAdapter {
          //messageResponse.toString();
          message.getChannel().sendMessage(messageResponse).queue();
       } catch (IOException e) {
-         responseWithError(message, "❌ Error reading challenges ❌. Please again later");
-         e.printStackTrace();
+         responseWithError(message, e, "❌ Error reading challenges ❌. Please again later");
       }
    }
 
@@ -96,7 +99,7 @@ public class MessageReceiveListener extends ListenerAdapter {
 
       if (!isValidUrl(challengeUrl)) {
          String errorMessage = "Unable to add: " + challengeUrl + " Please check if it is a valid Coding Challenge";
-         responseWithError(message, errorMessage);
+         responseWithError(message, null, errorMessage);
          return;
       }
 
@@ -104,7 +107,7 @@ public class MessageReceiveListener extends ListenerAdapter {
          String challengeName = getChallengeName(challengeUrl);
          if (challengeName != null) {
             if (isChallengeInCatalog(challengeName, challengeUrl)) {
-               responseWithError(message, "This Coding Challenge already exist");
+               responseWithError(message, null, "This Coding Challenge already exist");
                return;
             }
 
@@ -115,7 +118,7 @@ public class MessageReceiveListener extends ListenerAdapter {
          }
       } catch (IOException e) {
          String errorMessage = "Unable to get challenge: " + e.getMessage();
-         responseWithError(message, errorMessage);
+         responseWithError(message, e, errorMessage);
       }
    }
 
@@ -190,7 +193,8 @@ public class MessageReceiveListener extends ListenerAdapter {
       return titleElement != null ? titleElement.text() : null;
    }
 
-   private void responseWithError(Message message, String errorMessage) {
+   private void responseWithError(Message message, @Nullable IOException exception, String errorMessage) {
+      logger.error("An unexpected error occurred", exception);
       message.getChannel().sendMessage(errorMessage).queue();
    }
 }

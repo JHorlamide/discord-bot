@@ -1,10 +1,14 @@
 package jhorlamide;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.LoginException;
 
 public class Main {
+   private static final Logger logger = LoggerFactory.getLogger(MessageReceiveListener.class);
+
    public static void main(String[] args) {
       var dotenv = Dotenv.load();
       var token = dotenv.get("DISCORD_BOT_TOKEN");
@@ -17,7 +21,7 @@ public class Main {
       try {
          new Bot(token).start();
       } catch (LoginException exception) {
-         exception.printStackTrace(); // replaced with more robust logging
+         logger.error("An unexpected error occurred", exception);
       }
    }
 }

@@ -27,7 +27,8 @@ public class Bot {
          GatewayIntent.DIRECT_MESSAGE_REACTIONS
       );
 
-      JDABuilder.createDefault(TOKEN, intents)
+      JDABuilder builder = JDABuilder.createDefault(TOKEN);
+      builder.enableIntents(intents)
          .addEventListeners(new MessageReceiveListener())
          .build();
    }
