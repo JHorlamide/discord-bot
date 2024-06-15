@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'application'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
 group = 'jhorlamide'
@@ -17,11 +18,11 @@ application {
 }
 
 dependencies {
-    implementation"net.dv8tion:JDA:5.0.0-beta.24"
-    implementation"io.github.cdimascio:dotenv-java:2.2.3"
-    implementation'org.json:json:20231013'
-    implementation"org.jsoup:jsoup:1.15.3"
-    implementation"org.slf4j:slf4j-api:2.1.0-alpha1"
+    implementation "net.dv8tion:JDA:5.0.0-beta.24"
+    implementation "io.github.cdimascio:dotenv-java:2.2.3"
+    implementation 'org.json:json:20231013'
+    implementation "org.jsoup:jsoup:1.15.3"
+    implementation "org.slf4j:slf4j-api:2.1.0-alpha1"
     implementation 'ch.qos.logback:logback-classic:1.5.6'
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
@@ -31,6 +32,20 @@ dependencies {
 configurations {
     configureEach {
         exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+    }
+}
+
+shadowJar {
+    archiveBaseName.set('discord-bot')
+    archiveClassifier.set('')
+    archiveVersion.set('')
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'jhorlamide.Main'
+        )
     }
 }
 

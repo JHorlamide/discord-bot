@@ -24,7 +24,6 @@ out/
 .settings
 .springBeans
 .sts4-cache
-.env
 bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
@@ -41,3 +40,7 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Project ###
+.env
+application.log

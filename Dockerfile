@@ -18,7 +18,7 @@ COPY gradlew.bat /app/
 COPY src /app/src
 
 # Install dependencies and build the application
-RUN ./gradlew clean build
+RUN ./gradlew clean shadowJar
 
 # Copy the built jar file to the container
 COPY build/libs/*.jar /app/app.jar
