@@ -12,14 +12,15 @@ import org.jsoup.nodes.Element;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URI;
+import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Random;
 
 public class MessageReceiveListener extends ListenerAdapter {
-   private final String CHALLENGE_FILE_PATH = "./challenge.json";
+   private final String CHALLENGE_FILE_PATH = "./challenges.json";
 
    @Override
    public void onMessageReceived(@NotNull MessageReceivedEvent event) {
@@ -42,7 +43,7 @@ public class MessageReceiveListener extends ListenerAdapter {
          handleListChallengeCommand(message);
       }
 
-      if (messageContent.startsWith("!dd")) {
+      if (messageContent.startsWith("!add")) {
          handleAddChallengeCommand(message, messageContent);
       }
    }
@@ -53,7 +54,7 @@ public class MessageReceiveListener extends ListenerAdapter {
    }
 
    private void handleQuoteCommand(Message message) {
-      QuoteFetcher.getRandomQuite().thenApply(quote -> {
+      QuoteFetcher.getRandomQuote().thenApply(quote -> {
          message.getChannel().sendMessage(quote).queue();
          return null;
       });
@@ -61,8 +62,7 @@ public class MessageReceiveListener extends ListenerAdapter {
 
    private void handleChallengeCommand(Message message) {
       try {
-         String jsonContent = readJsonFile();
-         String messageResponse = getString(jsonContent);
+         String messageResponse = getRandomChallenge();
          message.getChannel().sendMessage(messageResponse).queue();
       } catch (IOException e) {
          responseWithError(message, "❌ Error reading challenges ❌. Please again later");
@@ -72,9 +72,7 @@ public class MessageReceiveListener extends ListenerAdapter {
 
    private void handleListChallengeCommand(Message message) {
       try {
-         String jsonContent = readJsonFile();
-         JSONObject jsonObject = new JSONObject(jsonContent);
-         JSONArray challenges = jsonObject.getJSONArray("challenges");
+         JSONArray challenges = getChallenges();
          StringBuilder messageResponse = new StringBuilder();
 
          for (int i = 0; i < challenges.length(); i++) {
@@ -84,7 +82,7 @@ public class MessageReceiveListener extends ListenerAdapter {
             messageResponse.append(challengeName).append(": ").append(challengeUrl).append("\n");
          }
 
-         messageResponse.toString();
+         //messageResponse.toString();
          message.getChannel().sendMessage(messageResponse).queue();
       } catch (IOException e) {
          responseWithError(message, "❌ Error reading challenges ❌. Please again later");
@@ -92,34 +90,37 @@ public class MessageReceiveListener extends ListenerAdapter {
       }
    }
 
-
    private void handleAddChallengeCommand(Message message, String messageContent) {
       String[] parts = messageContent.split("\\s+", 2); // Split into !add and the URL
+      String challengeUrl = parts[1].trim();
 
-      if (parts.length != 2)
-         return;
-
-      String url = parts[1].trim();
-      if (!isValidUrl(url)) {
-         String errorMessage = "Unable to add " + url + " Please check if it's a valid coding challenge";
+      if (!isValidUrl(challengeUrl)) {
+         String errorMessage = "Unable to add: " + challengeUrl + " Please check if it is a valid Coding Challenge";
          responseWithError(message, errorMessage);
+         return;
       }
 
       try {
-         String challengeTitle = getChallengeTitle(url);
-         if (challengeTitle != null) {
-            addChallenge(challengeTitle, url);
+         String challengeName = getChallengeName(challengeUrl);
+         if (challengeName != null) {
+            if (isChallengeInCatalog(challengeName, challengeUrl)) {
+               responseWithError(message, "This Coding Challenge already exist");
+               return;
+            }
 
-            String responseMessage = "Added: " + challengeTitle + ": " + url;
+            addChallengeToCatalog(challengeName, challengeUrl);
+
+            String responseMessage = "Added: " + challengeName + ": " + challengeUrl;
             message.getChannel().sendMessage(responseMessage).queue();
          }
       } catch (IOException e) {
-         responseWithError(message, "Unable to get challenge. Please it is a valid coding challenge.");
+         String errorMessage = "Unable to get challenge: " + e.getMessage();
+         responseWithError(message, errorMessage);
       }
    }
 
 
-   private void addChallenge(String url, String name) throws IOException {
+   private void addChallengeToCatalog(String name, String url) throws IOException {
       String jsonContent = readJsonFile();
       JSONObject jsonObject = new JSONObject(jsonContent);
       JSONArray challenges = jsonObject.getJSONArray("challenges");
@@ -134,9 +135,8 @@ public class MessageReceiveListener extends ListenerAdapter {
       }
    }
 
-   private String getString(String jsonContent) {
-      JSONObject jsonObject = new JSONObject(jsonContent);
-      JSONArray challenges = jsonObject.getJSONArray("challenges");
+   private String getRandomChallenge() throws IOException {
+      JSONArray challenges = getChallenges();
 
       var random = new Random();
       int randomIndex = random.nextInt(challenges.length());
@@ -152,15 +152,39 @@ public class MessageReceiveListener extends ListenerAdapter {
    }
 
    private boolean isValidUrl(String url) {
+      String VALID_DOMAIN = "codingchallenges.fyi";
+
       try {
-         URI uri = new URI(url);
-         return uri.getHost() != null && !uri.getHost().isEmpty();
-      } catch (URISyntaxException e) {
+         URL obj = new URL(url);
+         obj.toURI();
+
+         HttpURLConnection huc = (HttpURLConnection) obj.openConnection();
+         huc.setRequestMethod("GET");
+         huc.setConnectTimeout(5000);
+         huc.setReadTimeout(5000);
+         int responseCode = huc.getResponseCode();
+         String host = obj.getHost();
+         return responseCode == 200 && host.endsWith(VALID_DOMAIN);
+      } catch (URISyntaxException | IOException e) {
          return false;
       }
    }
 
-   private String getChallengeTitle(String url) throws IOException {
+   private boolean isChallengeInCatalog(String name, String url) throws IOException {
+      JSONArray challenges = getChallenges();
+      JSONObject lastChallenge = challenges.getJSONObject(challenges.length() - 1);
+      String challengeName = lastChallenge.getString("name");
+      String challengeUrl = lastChallenge.getString("url");
+      return challengeName.equals(name) && challengeUrl.equals(url);
+   }
+
+   private JSONArray getChallenges() throws IOException {
+      String jsonContent = readJsonFile();
+      JSONObject jsonObject = new JSONObject(jsonContent);
+      return jsonObject.getJSONArray("challenges");
+   }
+
+   private String getChallengeName(String url) throws IOException {
       Document document = Jsoup.connect(url).get();
       Element titleElement = document.selectFirst("title");
       return titleElement != null ? titleElement.text() : null;

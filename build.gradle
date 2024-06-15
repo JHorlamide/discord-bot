@@ -1,12 +1,19 @@
 plugins {
     id 'java'
+    id 'application'
 }
 
 group = 'jhorlamide'
 version = '1.0-SNAPSHOT'
 
+sourceCompatibility = '11'
+
 repositories {
     mavenCentral()
+}
+
+application {
+    mainClassName = 'jhorlamide.Main'
 }
 
 dependencies {
