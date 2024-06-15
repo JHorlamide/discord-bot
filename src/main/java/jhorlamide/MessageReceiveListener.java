@@ -10,6 +10,8 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -19,13 +21,10 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Random;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class MessageReceiveListener extends ListenerAdapter {
-   private final String CHALLENGE_FILE_PATH = "./challenges.json";
    private static final Logger logger = LoggerFactory.getLogger(MessageReceiveListener.class);
-
+   private final String CHALLENGE_FILE_PATH = "./challenges.json";
 
    @Override
    public void onMessageReceived(@NotNull MessageReceivedEvent event) {
@@ -70,7 +69,7 @@ public class MessageReceiveListener extends ListenerAdapter {
          String messageResponse = getRandomChallenge();
          message.getChannel().sendMessage(messageResponse).queue();
       } catch (IOException e) {
-         responseWithError(message, e,"❌ Error reading challenges ❌. Please again later");
+         responseWithError(message, e, "❌ Error reading challenges ❌. Please again later");
       }
    }
 
@@ -96,6 +95,11 @@ public class MessageReceiveListener extends ListenerAdapter {
    private void handleAddChallengeCommand(Message message, String messageContent) {
       String[] parts = messageContent.split("\\s+", 2); // Split into !add and the URL
       String challengeUrl = parts[1].trim();
+
+      if (parts.length != 2) {
+         responseWithError(message, null, "Command not allowed");
+         return;
+      }
 
       if (!isValidUrl(challengeUrl)) {
          String errorMessage = "Unable to add: " + challengeUrl + " Please check if it is a valid Coding Challenge";
@@ -163,8 +167,8 @@ public class MessageReceiveListener extends ListenerAdapter {
 
          HttpURLConnection huc = (HttpURLConnection) obj.openConnection();
          huc.setRequestMethod("GET");
-         huc.setConnectTimeout(5000);
-         huc.setReadTimeout(5000);
+         huc.setConnectTimeout(2000);
+         huc.setReadTimeout(2000);
          int responseCode = huc.getResponseCode();
          String host = obj.getHost();
          return responseCode == 200 && host.endsWith(VALID_DOMAIN);
